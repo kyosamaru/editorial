@@ -176,8 +176,8 @@ input[type=range]:active::-moz-range-thumb { cursor: grabbing; }
     const set = slide.dataset.set;
     slide.innerHTML = `
       <div class="container">
-        <div class="img-wrapper"><img src="image/${set}_CLEAN.png" alt="Before"></div>
-        <div class="img-wrapper"><img src="image/${set}_FINAL.png" alt="After"></div>
+        <div class="img-wrapper"><img src="../image/${set}_CLEAN.png" alt="Before"></div>
+        <div class="img-wrapper"><img src="../image/${set}_FINAL.png" alt="After"></div>
         <div class="line"></div>
         <input type="range" min="0" max="100" value="50">
       </div>
