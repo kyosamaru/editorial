@@ -8,18 +8,37 @@
 html, body {
   width: 100%;
   height: 100%;
-  background-color: transparent;
+  background: transparent;
   overflow: hidden;
 }
 body {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
-#container {
+
+/* 슬라이더 전체 래퍼 */
+#slideshow {
+  position: relative;
+  width: 100%;
+}
+
+/* 각 슬라이드 */
+.slide {
+  display: none;
+  width: 100%;
+}
+.slide.active {
+  display: block;
+}
+
+/* before/after 컨테이너 */
+.container {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
+  overflow: hidden;
 }
 .img-wrapper {
   position: absolute;
@@ -40,7 +59,7 @@ body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  width: .2rem;
+  width: .15rem;
   height: 100%;
   background-color: #fff;
   pointer-events: none;
@@ -48,7 +67,7 @@ body {
 input[type=range] {
   appearance: none;
   -webkit-appearance: none;
-  background-color: transparent;
+  background: transparent;
   position: absolute;
   width: calc(100% + 2.25rem);
   height: 100%;
@@ -58,12 +77,11 @@ input[type=range] {
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none;
   height: 2.25rem;
   width: 2.25rem;
   border: .25rem solid #fff;
   border-radius: 50%;
-  box-shadow: 0px 0px 8px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 0 8px 2px rgba(0,0,0,0.2);
   background-color: #fff;
   background-image: url('data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A//www.w3.org/2000/svg%22 height%3D%2224px%22 viewBox%3D%220 -960 960 960%22 width%3D%2224px%22 fill%3D%22%23000%22%3E%3Cpath d%3D%22M286.15-293.85 100-479.62l185.77-185.76 42.15 41.76-113 113.62h530.16l-113-113.62 42.15-41.76L860-479.62 674.23-293.85l-42.54-41.77 113.39-114H214.54l113.38 114-41.77 41.77Z%22/%3E%3C/svg%3E');
   background-size: cover;
@@ -74,7 +92,7 @@ input[type=range]::-moz-range-thumb {
   width: 2.25rem;
   border: .25rem solid #fff;
   border-radius: 50%;
-  box-shadow: 0px 0px 8px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 0 8px 2px rgba(0,0,0,0.2);
   background-color: #fff;
   background-image: url('data:image/svg+xml;utf8,%3Csvg xmlns%3D%22http%3A//www.w3.org/2000/svg%22 height%3D%2224px%22 viewBox%3D%220 -960 960 960%22 width%3D%2224px%22 fill%3D%22%23000%22%3E%3Cpath d%3D%22M286.15-293.85 100-479.62l185.77-185.76 42.15 41.76-113 113.62h530.16l-113-113.62 42.15-41.76L860-479.62 674.23-293.85l-42.54-41.77 113.39-114H214.54l113.38 114-41.77 41.77Z%22/%3E%3C/svg%3E');
   background-size: cover;
@@ -82,45 +100,119 @@ input[type=range]::-moz-range-thumb {
 }
 input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; }
 input[type=range]:active::-moz-range-thumb { cursor: grabbing; }
+
+/* 네비게이션 화살표 */
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.7);
+  border: none;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  transition: background 0.2s;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.95); }
+#prev { left: .5rem; }
+#next { right: .5rem; }
+
+/* 점 인디케이터 */
+#dots {
+  display: flex;
+  gap: .5rem;
+  justify-content: center;
+  padding: .6rem 0;
+  background: transparent;
+}
+.dot {
+  width: .45rem;
+  height: .45rem;
+  border-radius: 50%;
+  background: #ccc;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.dot.active { background: #333; }
 </style>
 </head>
 <body>
 
-<div id="container" aria-label="Before and after image slider">
-  <div class="img-wrapper">
-    <img id="img-before" src="" alt="Before">
-  </div>
-  <div class="img-wrapper">
-    <img id="img-after" src="" alt="After">
-  </div>
-  <div id="line"></div>
-  <input id="slider" type="range" min="0" max="100" value="50">
+<div id="slideshow">
+  <!-- 슬라이드들 -->
+  <div class="slide active" data-set="C09"></div>
+  <div class="slide" data-set="C11"></div>
+  <div class="slide" data-set="C31"></div>
+  <div class="slide" data-set="C38-3"></div>
+  <div class="slide" data-set="C42"></div>
+  <div class="slide" data-set="C46"></div>
+  <div class="slide" data-set="C55"></div>
+
+  <!-- 화살표 -->
+  <button class="nav-btn" id="prev">&#8249;</button>
+  <button class="nav-btn" id="next">&#8250;</button>
 </div>
 
+<!-- 점 인디케이터 -->
+<div id="dots"></div>
+
 <script>
-  const params = new URLSearchParams(window.location.search);
-  const set = params.get('set') || 'C09';
-  const base = 'image/';
+  const sets = ['C09','C11','C31','C38-3','C42','C46','C55'];
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('dots');
+  let current = 0;
 
-  const imgBefore = document.getElementById('img-before');
-  const imgAfter  = document.getElementById('img-after');
-  imgBefore.src = base + set + '_CLEAN.png';
-  imgAfter.src  = base + set + '_FINAL.png';
-
-  const wrapAfter = document.querySelector('.img-wrapper:nth-of-type(2)');
-  const line   = document.getElementById('line');
-  const slider = document.getElementById('slider');
-
-  slider.addEventListener('input', () => {
-    line.style.left = slider.value + '%';
-    wrapAfter.style.clipPath = 'inset(0px 0px 0px ' + slider.value + '%)';
+  // 슬라이드 빌드
+  slides.forEach((slide, i) => {
+    const set = slide.dataset.set;
+    slide.innerHTML = `
+      <div class="container">
+        <div class="img-wrapper"><img src="image/${set}_CLEAN.png" alt="Before"></div>
+        <div class="img-wrapper"><img src="image/${set}_FINAL.png" alt="After"></div>
+        <div id="line"></div>
+        <input type="range" min="0" max="100" value="50">
+      </div>
+    `;
+    // 슬라이더 이벤트
+    const input = slide.querySelector('input');
+    const line  = slide.querySelector('#line');
+    const after = slide.querySelector('.img-wrapper:nth-of-type(2)');
+    input.addEventListener('input', () => {
+      line.style.left = input.value + '%';
+      after.style.clipPath = 'inset(0px 0px 0px ' + input.value + '%)';
+    });
+    input.addEventListener('dblclick', () => {
+      input.value = 50;
+      line.style.left = '50%';
+      after.style.clipPath = 'inset(0px 0px 0px 50%)';
+    });
   });
 
-  slider.addEventListener('dblclick', () => {
-    slider.value = 50;
-    line.style.left = '50%';
-    wrapAfter.style.clipPath = 'inset(0px 0px 0px 50%)';
+  // 점 생성
+  sets.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(dot);
   });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    dotsEl.children[current].classList.remove('active');
+    current = (n + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    dotsEl.children[current].classList.add('active');
+  }
+
+  document.getElementById('prev').addEventListener('click', () => goTo(current - 1));
+  document.getElementById('next').addEventListener('click', () => goTo(current + 1));
 </script>
 
 </body>
