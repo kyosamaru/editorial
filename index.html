@@ -18,19 +18,22 @@ body {
   justify-content: flex-start;
 }
 
-/* 슬라이더 전체 래퍼 */
 #slideshow {
   position: relative;
   width: 100%;
+  overflow: hidden;
 }
 
-/* 각 슬라이드 */
-.slide {
-  display: none;
-  width: 100%;
+/* 슬라이드 트랙 - 가로로 나열 */
+#track {
+  display: flex;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
-.slide.active {
-  display: block;
+
+.slide {
+  flex: 0 0 100%;
+  width: 100%;
 }
 
 /* before/after 컨테이너 */
@@ -55,7 +58,7 @@ body {
   object-fit: cover;
   display: block;
 }
-#line {
+.line {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -101,17 +104,17 @@ input[type=range]::-moz-range-thumb {
 input[type=range]:active::-webkit-slider-thumb { cursor: grabbing; }
 input[type=range]:active::-moz-range-thumb { cursor: grabbing; }
 
-/* 네비게이션 화살표 */
+/* 화살표 */
 .nav-btn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.75);
   border: none;
   border-radius: 50%;
   width: 2rem;
   height: 2rem;
-  font-size: 1rem;
+  font-size: 1.2rem;
   cursor: pointer;
   z-index: 10;
   display: flex;
@@ -119,6 +122,7 @@ input[type=range]:active::-moz-range-thumb { cursor: grabbing; }
   justify-content: center;
   color: #333;
   transition: background 0.2s;
+  line-height: 1;
 }
 .nav-btn:hover { background: rgba(255,255,255,0.95); }
 #prev { left: .5rem; }
@@ -130,7 +134,6 @@ input[type=range]:active::-moz-range-thumb { cursor: grabbing; }
   gap: .5rem;
   justify-content: center;
   padding: .6rem 0;
-  background: transparent;
 }
 .dot {
   width: .45rem;
@@ -146,43 +149,41 @@ input[type=range]:active::-moz-range-thumb { cursor: grabbing; }
 <body>
 
 <div id="slideshow">
-  <!-- 슬라이드들 -->
-  <div class="slide active" data-set="C09"></div>
-  <div class="slide" data-set="C11"></div>
-  <div class="slide" data-set="C31"></div>
-  <div class="slide" data-set="C38-3"></div>
-  <div class="slide" data-set="C42"></div>
-  <div class="slide" data-set="C46"></div>
-  <div class="slide" data-set="C55"></div>
-
-  <!-- 화살표 -->
+  <div id="track">
+    <div class="slide" data-set="C09"></div>
+    <div class="slide" data-set="C11"></div>
+    <div class="slide" data-set="C31"></div>
+    <div class="slide" data-set="C38-3"></div>
+    <div class="slide" data-set="C42"></div>
+    <div class="slide" data-set="C46"></div>
+    <div class="slide" data-set="C55"></div>
+  </div>
   <button class="nav-btn" id="prev">&#8249;</button>
   <button class="nav-btn" id="next">&#8250;</button>
 </div>
 
-<!-- 점 인디케이터 -->
 <div id="dots"></div>
 
 <script>
-  const sets = ['C09','C11','C31','C38-3','C42','C46','C55'];
   const slides = document.querySelectorAll('.slide');
+  const track  = document.getElementById('track');
   const dotsEl = document.getElementById('dots');
-  let current = 0;
+  let current  = 0;
+  let animating = false;
 
   // 슬라이드 빌드
-  slides.forEach((slide, i) => {
+  slides.forEach((slide) => {
     const set = slide.dataset.set;
     slide.innerHTML = `
       <div class="container">
         <div class="img-wrapper"><img src="image/${set}_CLEAN.png" alt="Before"></div>
         <div class="img-wrapper"><img src="image/${set}_FINAL.png" alt="After"></div>
-        <div id="line"></div>
+        <div class="line"></div>
         <input type="range" min="0" max="100" value="50">
       </div>
     `;
-    // 슬라이더 이벤트
     const input = slide.querySelector('input');
-    const line  = slide.querySelector('#line');
+    const line  = slide.querySelector('.line');
     const after = slide.querySelector('.img-wrapper:nth-of-type(2)');
     input.addEventListener('input', () => {
       line.style.left = input.value + '%';
@@ -196,7 +197,7 @@ input[type=range]:active::-moz-range-thumb { cursor: grabbing; }
   });
 
   // 점 생성
-  sets.forEach((_, i) => {
+  slides.forEach((_, i) => {
     const dot = document.createElement('div');
     dot.className = 'dot' + (i === 0 ? ' active' : '');
     dot.addEventListener('click', () => goTo(i));
@@ -204,15 +205,25 @@ input[type=range]:active::-moz-range-thumb { cursor: grabbing; }
   });
 
   function goTo(n) {
-    slides[current].classList.remove('active');
+    if (animating || n === current) return;
+    animating = true;
     dotsEl.children[current].classList.remove('active');
     current = (n + slides.length) % slides.length;
-    slides[current].classList.add('active');
+    track.style.transform = `translateX(-${current * 100}%)`;
     dotsEl.children[current].classList.add('active');
+    setTimeout(() => { animating = false; }, 450);
   }
 
   document.getElementById('prev').addEventListener('click', () => goTo(current - 1));
   document.getElementById('next').addEventListener('click', () => goTo(current + 1));
+
+  // 터치 스와이프 지원
+  let touchStartX = 0;
+  track.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  track.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) goTo(diff > 0 ? current + 1 : current - 1);
+  });
 </script>
 
 </body>
